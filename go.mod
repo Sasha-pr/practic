@@ -1,4 +1,4 @@
-module github.com/Sasha-pr/generator2
+module github.com/Sasha-pr/practic
 
 go 1.26.3
 
