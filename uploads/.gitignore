@@ -1,0 +1,43 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+avatar-generator
+generator2
+cmd/server/server
+cmd/server/server.exe
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Uploads directory (сгенерированные аватары)
+uploads/
+**/uploads/
+**/uploads/*.png
+!uploads/.gitkeep
+
+# Preview files
+preview.png
+**/preview.png
+
+# Logs
+*.log
+
+# Config with sensitive data
+config.local.json

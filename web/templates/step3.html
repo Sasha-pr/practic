@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Сохранение аватара</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>💾 Сохранение аватара</h1>
+        
+        <div class="preview-card">
+            <img id="finalPreview" src="{{.Preview}}" width="150" height="150" style="border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.2);">
+        </div>
+        
+        <form id="saveForm">
+            <div class="form-group">
+                <label>📝 Имя файла:</label>
+                <input type="text" id="filename" name="filename" value="avatar.png" required placeholder="например: my-avatar">
+                <small>Расширение .png добавится автоматически</small>
+            </div>
+            
+            <div class="form-group">
+                <label>📁 Путь сохранения:</label>
+                <input type="text" id="filepath" name="filepath" value="uploads" placeholder="uploads">
+                <small>Оставьте "uploads" для сохранения в папку uploads</small>
+            </div>
+            
+            <div class="button-group">
+                <button type="button" onclick="window.location.href='/step2'" class="back-button">← Назад к настройкам</button>
+                <button type="submit" class="btn-success">💾 Сохранить аватар</button>
+            </div>
+        </form>
+        
+        <div id="resultMessage" style="display: none; margin-top: 20px;"></div>
+        
+        <div class="nav-links">
+            <a href="/list-files">📁 Просмотреть все сохранённые аватары</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('saveForm');
+        const resultDiv = document.getElementById('resultMessage');
+        const finalPreview = document.getElementById('finalPreview');
+        
+        // Обновляем предпросмотр каждые 2 секунды
+        setInterval(() => {
+            finalPreview.src = '{{.Preview}}?t=' + new Date().getTime();
+        }, 2000);
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const filename = document.getElementById('filename').value;
+            const filepath = document.getElementById('filepath').value;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const backBtn = form.querySelector('.back-button');
+            const originalText = submitBtn.textContent;
+            
+            if (!filename.trim()) {
+                alert('Введите имя файла');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('filename', filename);
+            formData.append('filepath', filepath);
+            
+            submitBtn.disabled = true;
+            backBtn.disabled = true;
+            submitBtn.textContent = '⏳ Сохранение...';
+            
+            try {
+                const response = await fetch('/step3', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.text();
+                
+                if (response.ok) {
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = result;
+                    form.style.display = 'none';
+                } else {
+                    resultDiv.style.display = 'block';
+                    resultDiv.innerHTML = '<div class="error-message">❌ Ошибка сохранения: ' + result + '</div>';
+                    submitBtn.disabled = false;
+                    backBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            } catch (error) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<div class="error-message">❌ Ошибка соединения: ' + error.message + '</div>';
+                submitBtn.disabled = false;
+                backBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    </script>
+</body>
+</html>

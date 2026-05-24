@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Персонализация аватара</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Персонализация аватара</h1>
+        
+        <div class="preview-container">
+            <div class="preview-box">
+                <h3>Предпросмотр</h3>
+                <img id="avatarPreview" src="{{.Preview}}?t={{.Timestamp}}" alt="Avatar preview" style="width: 200px; height: 200px; border-radius: 15px;">
+                <p id="previewStatus" class="preview-status"></p>
+            </div>
+            
+            <div class="options-box">
+                <form id="personalizationForm">
+                    <div class="form-group">
+                        <label>Цвет фона:</label>
+                        <select id="colorSelect" name="color" class="color-select">
+                            {{range .Colors}}
+                            <option value="{{.Hex}}" {{if eq .Hex $.SelectedColor}}selected{{end}} style="background-color: {{.Hex}}; color: {{if isLight .}}#000{{else}}#fff{{end}};"> 
+                                {{.Name}} ({{.Hex}})
+                            </option>
+                            {{end}}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Размер шрифта: <span id="fontSizeValue">{{.SelectedFontSize}}</span>px</label>
+                        <input type="range" id="fontSizeRange" name="fontsize" min="20" max="120" value="{{.SelectedFontSize}}" step="1" class="slider">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Размер изображения: <span id="imageSizeValue">{{.SelectedImageSize}}</span>x{{.SelectedImageSize}}px</label>
+                        <input type="range" id="imageSizeRange" name="imagesize" min="100" max="500" value="{{.SelectedImageSize}}" step="10" class="slider">
+                    </div>
+                    
+                    <div class="button-group">
+                        <button type="button" id="updatePreviewBtn" class="btn-primary">Обновить предпросмотр</button>
+                        <button type="button" id="nextBtn" class="btn-success">Далее →</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const email = "{{.Email}}";
+        const previewImg = document.getElementById('avatarPreview');
+        const colorSelect = document.getElementById('colorSelect');
+        const fontSizeRange = document.getElementById('fontSizeRange');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const imageSizeRange = document.getElementById('imageSizeRange');
+        const imageSizeValue = document.getElementById('imageSizeValue');
+        const updateBtn = document.getElementById('updatePreviewBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const previewStatus = document.getElementById('previewStatus');
+        
+        let updateTimeout;
+        let isUpdating = false;
+        
+        fontSizeRange.addEventListener('input', function() {
+            fontSizeValue.textContent = this.value;
+        });
+        
+        imageSizeRange.addEventListener('input', function() {
+            imageSizeValue.textContent = this.value;
+        });
+        
+        async function updatePreview(showLoading = true) {
+            if (isUpdating) return;
+            
+            const color = colorSelect.value;
+            const fontSize = fontSizeRange.value;
+            const imageSize = imageSizeRange.value;
+            
+            if (showLoading) {
+                previewStatus.textContent = '⏳ Обновление...';
+                previewStatus.style.color = '#667eea';
+            }
+            
+            isUpdating = true;
+            
+            try {
+                const response = await fetch('/update-preview', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        color: color,
+                        font_size: parseInt(fontSize),
+                        image_size: parseInt(imageSize)
+                    })
+                });
+                
+                if (response.ok) {
+                    const timestamp = new Date().getTime();
+                    previewImg.src = '/preview.png?t=' + timestamp;
+                    
+                    previewImg.onload = function() {
+                        previewStatus.textContent = '✅ Обновлено';
+                        previewStatus.style.color = '#28a745';
+                        setTimeout(() => {
+                            if (previewStatus.textContent === '✅ Обновлено') {
+                                previewStatus.textContent = '';
+                            }
+                        }, 1500);
+                        isUpdating = false;
+                    };
+                    
+                    previewImg.onerror = function() {
+                        previewStatus.textContent = '❌ Ошибка загрузки';
+                        previewStatus.style.color = '#dc3545';
+                        isUpdating = false;
+                    };
+                } else {
+                    previewStatus.textContent = '❌ Ошибка обновления';
+                    previewStatus.style.color = '#dc3545';
+                    isUpdating = false;
+                }
+            } catch (error) {
+                previewStatus.textContent = '❌ Ошибка соединения';
+                previewStatus.style.color = '#dc3545';
+                isUpdating = false;
+            }
+        }
+        
+        updateBtn.addEventListener('click', () => updatePreview(true));
+        
+        function debouncedUpdate() {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => updatePreview(true), 400);
+        }
+        
+        colorSelect.addEventListener('change', () => updatePreview(true));
+        fontSizeRange.addEventListener('input', debouncedUpdate);
+        imageSizeRange.addEventListener('input', debouncedUpdate);
+        
+        nextBtn.addEventListener('click', async () => {
+            nextBtn.disabled = true;
+            nextBtn.textContent = 'Сохранение...';
+            
+            const formData = new FormData();
+            formData.append('color', colorSelect.value);
+            formData.append('fontsize', fontSizeRange.value);
+            formData.append('imagesize', imageSizeRange.value);
+            
+            try {
+                const response = await fetch('/step2', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const html = await response.text();
+                    document.open();
+                    document.write(html);
+                    document.close();
+                } else {
+                    alert('Ошибка сохранения настроек');
+                    nextBtn.disabled = false;
+                    nextBtn.textContent = 'Далее →';
+                }
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+                nextBtn.disabled = false;
+                nextBtn.textContent = 'Далее →';
+            }
+        });
+        
+        window.addEventListener('load', () => {
+            setTimeout(() => updatePreview(true), 100);
+        });
+    </script>
+</body>
+</html>

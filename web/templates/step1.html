@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Аватар генератор - шаг 1</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Генератор аватаров</h1>
+        <h2 style="text-align: center; font-size: 18px; color: #667eea; margin-bottom: 30px;">Шаг 1 из 3</h2>
+        
+        <form method="post" action="/step1">
+            <div class="form-group">
+                <label>📧 Введите ваш email:</label>
+                <input type="email" name="email" placeholder="example@mail.com" required>
+                <small>Первая буква email будет использована для аватара</small>
+            </div>
+            <button type="submit">Далее →</button>
+        </form>
+        
+        <div class="nav-links">
+            <a href="/list-files">📁 Просмотреть сохранённые аватары</a>
+        </div>
+    </div>
+</body>
+</html>

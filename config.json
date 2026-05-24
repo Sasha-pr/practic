@@ -1,0 +1,7 @@
+{
+  "font_path": "fonts/ShareTechMono.ttf",
+  "default_font_size": 45,
+  "image_size": 300,
+  "max_email_prefix": 1,
+  "colors_json_path": "colors.json"
+}
